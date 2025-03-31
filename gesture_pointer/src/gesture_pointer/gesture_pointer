@@ -46,9 +46,7 @@ RED_COLOR = [1.0,0,0,1.0]
 GREEN_COLOR = [0,1.0,0,1.0]
 
 # ! ---------- FILL IN FOR STORING THE CACHE ---------- ! #
-#TODO: fix for release 
-#CACHE_PATH = '/media/opendr/My Passport/computer_vision_pc/user_files/noora/sandbox_nmksas/ros1env/src/misc_files/'
-CACHE_PATH = '/up/ros1env/src/misc_files/'
+CACHE_PATH = '/<your_workspace>/ros1env/src/gesture_pointer/data/'
 CORNER_FILE = 'corner_cache'
 MASK_FILE = 'mask_cache'
 # ! --------------------------------------------------- ! #
@@ -457,7 +455,7 @@ def main(args=None):
     pose_topic = "opendr/poses"
     output_image_topic = "/gesture_projection"
     shoulder_to_wrist = True
-    ws = read_corners(file_name='corners_mean.csv')
+    ws = read_corners(file_name='corners_mean_example.csv')
 
     projection_node = GesturePointer(
         cam_sub,
