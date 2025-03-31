@@ -1,0 +1,35 @@
+<launch>
+    <arg name="corner_marker_size" value="0.08"/>
+    <arg name="reference_frame"    value="st_cam_color_optical_frame"/>
+
+    <!-- Corner Markers -->
+    <include file="$(find gesture_pointer)/launch/single_marker.launch">
+        <arg name="marker_id"           value="103"/>
+        <arg name="marker_size"         value="$(arg corner_marker_size)"/>
+        <arg name="reference_frame"     value="$(arg reference_frame)"/>
+        <arg name="marker_frame"        value="aruco_103"/>
+    </include>
+    <include file="$(find gesture_pointer)/launch/single_marker.launch">
+        <arg name="marker_id"           value="100"/>
+        <arg name="marker_size"         value="$(arg corner_marker_size)"/>
+        <arg name="reference_frame"     value="$(arg reference_frame)"/>
+        <arg name="marker_frame"        value="aruco_100"/>
+    </include>
+    <include file="$(find gesture_pointer)/launch/single_marker.launch">
+        <arg name="marker_id"           value="101"/>
+        <arg name="marker_size"         value="$(arg corner_marker_size)"/>
+        <arg name="reference_frame"     value="$(arg reference_frame)"/>
+        <arg name="marker_frame"        value="aruco_101"/>
+    </include>
+    <include file="$(find gesture_pointer)/launch/single_marker.launch">
+        <arg name="marker_id"           value="102"/>
+        <arg name="marker_size"         value="$(arg corner_marker_size)"/>
+        <arg name="reference_frame"     value="$(arg reference_frame)"/>
+        <arg name="marker_frame"        value="aruco_102"/>
+    </include>
+
+    <!-- Collect the data -->
+    <node pkg="gesture_pointer" type="aruco_data_collection" name="aruco_workspace"
+          output="screen" required="true">
+    </node>
+</launch>

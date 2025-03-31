@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import rospy 
+from visualization_msgs.msg import Marker
+from utils import read_corners
+from utils import generate_line_strip_marker as get_line_marker
+
+RIGHT_LOW = 0
+RIGHT_UP = 1
+LEFT_UP = 2
+LEFT_LOW = 3
+
+
+class PlaneVisualizer: 
+    """
+    Visualizer for the used workplane. Can be used for ground truth values 
+    (wrt. workplane frame) or measured values (wrt. camera coordinate system) 
+    """
+
+    def __init__(self, frame, workplane_corners, debug_enabled=False):
+        self._pub = rospy.Publisher("/workplane_borders", Marker, queue_size=5)
+        self._frame = frame
+        self._corners = workplane_corners
+        self._border_markers = []
+        self._debug_enabled = debug_enabled
+
+    def initialize(self): 
+        """
+        Initialize the markers. Connect corners with line markers, save the 
+        results. 
+        """
+        if self._debug_enabled: 
+            print(self._corners)
+    
+        b1 = get_line_marker(self._frame, 301, 
+                             self._corners[RIGHT_UP], 
+                             self._corners[RIGHT_LOW], 0.03)
+        b2 = get_line_marker(self._frame, 302, 
+                             self._corners[RIGHT_LOW], 
+                             self._corners[LEFT_LOW], 0.03)
+        b3 = get_line_marker(self._frame, 303, 
+                             self._corners[LEFT_LOW], 
+                             self._corners[LEFT_UP], 0.03)
+        b4 = get_line_marker(self._frame, 304, 
+                             self._corners[LEFT_UP], 
+                             self._corners[RIGHT_UP], 0.03)
+        
+        self._border_markers.extend((b1,b2,b3,b4))
+
+    def publish_visualization(self):
+        """
+        Publish the line markers
+        """
+        for m in self._border_markers:  
+            self._pub.publish(m)
+            rospy.sleep(0.5)
+
+
+def main(args=None):
+
+    rospy.init_node('plane_visualizer', anonymous=True)
+    rospy.loginfo("Plane visualizer started.")  
+
+    # fetch the coordinates for the plane corners
+    plane_corners = read_corners("corners_mean.csv")
+    
+    pv = PlaneVisualizer("st_cam_color_optical_frame", plane_corners) 
+    pv.initialize()
+
+    while not rospy.is_shutdown(): 
+        pv.publish_visualization() 
+
+if __name__ == '__main__':
+    try: 
+        main()
+    except rospy.ROSInterruptException: 
+        pass

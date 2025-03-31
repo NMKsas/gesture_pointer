@@ -1,0 +1,28 @@
+<launch>
+    
+    <arg name="marker_id" default=""/>
+    <arg name="marker_size" default=""/>
+    <arg name="reference_frame" default=""/>
+    <arg name="marker_frame" default=""/>
+    
+    <!-- Replace the values for these parameters with your own camera setup -->
+    <arg name="camera_frame"            value="st_cam_color_optical_frame"/> 
+    <arg name="camera_info_topic"       value="st_cam/color/camera_info"/>
+    <arg name="input_image_topic"       value="st_cam/color/image_raw"/>
+    <arg name="is_image_rectified"      value="True"/>     
+    <!-- ################################################################## -->
+
+    <node pkg="aruco_ros" type="single" name="aruco_$(arg marker_id)">
+        
+        <param name="camera_frame"       value="$(arg camera_frame)"/>
+        <remap from="/camera_info"       to="$(arg camera_info_topic)" />
+        <remap from="/image"             to="$(arg input_image_topic)" />
+        <param name="image_is_rectified" value="$(arg is_image_rectified)"/> 
+
+        <param name="marker_id"          value="$(arg marker_id)"/>
+        <param name="marker_size"        value="$(arg marker_size)"/>
+        <param name="reference_frame"    value="$(arg reference_frame)"/>
+        <param name="marker_frame"       value="$(arg marker_frame)" />
+    
+    </node>
+</launch>

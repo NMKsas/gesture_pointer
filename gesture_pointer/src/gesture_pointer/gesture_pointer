@@ -1,0 +1,475 @@
+#!/usr/bin/env python3
+# Gesture pointer node for ROS1. 
+# Author: Noora Sassali
+# Version: 1.0.0-alpha
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import cv2
+
+import rospy
+import numpy as np
+import tf2_ros
+
+from sensor_msgs.msg import Image as ROS_Image
+from cv_bridge import CvBridge
+from gesture_pointer.msg import OpenDRPose2D
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import PointStamped
+from submodules import Workspace, CameraSubscriber
+from utils import point_to_workspace_plane, generate_marker_from_point, \
+                  read_corners
+                                
+from collections import deque
+
+
+# OpenPose indices
+RIGHT_SHOULDER = 2
+RIGHT_ELBOW = 3
+RIGHT_WRIST = 4
+
+LEFT_SHOULDER = 5
+LEFT_ELBOW = 6
+LEFT_WRIST = 7
+
+RED_COLOR = [1.0,0,0,1.0]
+GREEN_COLOR = [0,1.0,0,1.0]
+
+# ! ---------- FILL IN FOR STORING THE CACHE ---------- ! #
+#TODO: fix for release 
+#CACHE_PATH = '/media/opendr/My Passport/computer_vision_pc/user_files/noora/sandbox_nmksas/ros1env/src/misc_files/'
+CACHE_PATH = '/up/ros1env/src/misc_files/'
+CORNER_FILE = 'corner_cache'
+MASK_FILE = 'mask_cache'
+# ! --------------------------------------------------- ! #
+
+
+class GesturePointer:
+    """
+    Node for localizing pointing gestures. Defines a 3D workplane, detects 
+    the pointing gestures directed to the plane by extending shoulder-wrist
+    or elbow-wrist vector to intersect the plane. 
+    Publishes a point coordinate, rviz marker, and a projection stream. 
+    """
+
+    def __init__(self,
+                 camera_subscriber : CameraSubscriber,
+                 camera_tf_frame="st_cam_color_optical_frame",
+                 target_tf_frame="st_cam_color_optical_frame",
+                 input_poses_topic="/opendr/poses",
+                 output_image_topic="/gesture_projection",
+                 from_shoulder_to_wrist=True,
+                 cache_enabled=False,
+                 predefined_corners=None ):
+        """_summary_
+
+        Args:
+            camera_subscriber (CameraSubscriber): Camera subscriber class
+            camera_tf_frame (str, optional): Camera /tf frame.
+            target_tf_frame (str, optional): /tf frame to publish localized 
+                                             points and markers.
+            input_poses_topic (str):    Pose estimation topic. 
+                                        Defaults to "/opendr/poses".
+            output_image_topic (str):   Topic for output projection stream. 
+                                        Defaults to "/gesture_projection".
+            from_shoulder_to_wrist (bool): Use shoulder-wrist points over 
+                                           elbow-wrist points. Defaults to True.
+            cache_enabled (bool, optional): When enabled, use previously saved
+                                            cache for workspace coordinates. 
+                                            Defaults to False.
+            predefined_corners (List, optional): List of predefined 4 corner 
+                                                 coordinates. Defaults to None.
+        """
+
+        self._camera_sub = camera_subscriber
+        self._left_pointer = None
+        self._right_pointer = None 
+        self._poses_topic = input_poses_topic
+        self._predefined_corners = predefined_corners
+
+        # Define which keypoints are used for projection
+        if from_shoulder_to_wrist:
+            self._left_pointer = self.Pointer(LEFT_WRIST,LEFT_SHOULDER,
+                                              "/gesture_pointer/left_marker",
+                                              RED_COLOR,
+                                              "/gesture_pointer/left_pointer")
+            self._right_pointer = self.Pointer(RIGHT_WRIST,RIGHT_SHOULDER,
+                                              "/gesture_pointer/right_marker",
+                                              GREEN_COLOR,
+                                              "/gesture_pointer/right_pointer")
+        else:
+            self._left_pointer = self.Pointer(LEFT_WRIST,LEFT_ELBOW,
+                                              "/gesture_pointer/left_marker",
+                                              RED_COLOR,
+                                              "/gesture_pointer/left_pointer")
+            self._right_pointer = self.Pointer(RIGHT_WRIST,RIGHT_ELBOW,
+                                              "/gesture_pointer/right_marker",
+                                              GREEN_COLOR,
+                                              "/gesture_pointer/right_pointer")
+
+        self._cache_enabled = cache_enabled
+
+        self._camera_tf_frame = camera_tf_frame
+        self._target_tf_frame  = target_tf_frame
+
+        self._tf_buffer = None 
+        self._tf_listener = None
+        self._workspace = None 
+        self._pose_sub = None 
+
+        # Publish the projection stream, if output topic is given 
+        if output_image_topic is not None:
+            self.image_publisher = rospy.Publisher(output_image_topic, 
+                                                   ROS_Image, queue_size=1)
+        else:
+            self.image_publisher = None
+
+        self._cv_bridge = CvBridge() 
+        
+    def initialize(self):
+        """
+        Start the node and begin processing input data
+        """
+
+        # Initialize /tf listener
+        self._tf_buffer = tf2_ros.Buffer(rospy.Duration(100.0)) 
+        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer)
+        
+        # establish workspace 
+        self._workspace = Workspace(self._camera_sub,
+                                    corner_file_path=CACHE_PATH + CORNER_FILE,
+                                    mask_file_path=CACHE_PATH + MASK_FILE,
+                                    corner_points=self._predefined_corners,
+                                    cache_enabled=self._cache_enabled)
+
+        # After successful, get parameters for visualizing projection stream  
+        v1, v2 = self._workspace.get_visualizing_norms()
+        self._ellipse_delta_x = int(v1 * 0.15)
+        self._ellipse_delta_y = int(v2 * 0.15)             
+        
+        # Subscribe the poses and start processing 
+        self._pose_sub = rospy.Subscriber(self._poses_topic, OpenDRPose2D, 
+                                          self.callback_poses, queue_size=1, 
+                                          buff_size=1000000)
+        rospy.loginfo("Gesture pointer node started")
+
+    def callback_poses(self, data):
+        """
+        Callback for OpenPose data. Updates and publishes the pointer data. 
+
+        Args:self._predefine
+            data (OpenDRPose2D): OpenPose data for body keypoints. 
+        """
+        # Update and publish pointer based on the pose detection data 
+        self.update_pointer(data, self._left_pointer)
+        self.update_pointer(data, self._right_pointer)
+        self.publish_pointer(self._left_pointer)
+        self.publish_pointer(self._right_pointer)
+
+        # publish image feed 
+        if self.image_publisher is not None:
+            self.publish_visualized_image()
+
+
+    def update_pointer(self, pose_data, pointer):
+        """
+        Based on the pose data, update the intersection point to pointer buffer.
+
+        Args:
+            pose_data (OpenDRPose2D): OpenPose data for body keypoints 
+            pointer (Pointer): pointer entity (left/right)
+        """
+        # pick the hand gesture key point values
+        upper_kp = pose_data.keypoint_list[pointer.get_upper_keypoint_id()]
+        lower_kp = pose_data.keypoint_list[pointer.get_lower_keypoint_id()]
+
+        # only do the math if the key points are valid 
+        if upper_kp != -1 and lower_kp != -1:
+            pointer.set_keypoints(lower_kp, upper_kp)
+
+            # fetch 3D coordinates
+            p0 = self._camera_sub.deproject_pixel_to_point((upper_kp.x, 
+                                                            upper_kp.y))
+            p1 = self._camera_sub.deproject_pixel_to_point((lower_kp.x, 
+                                                            lower_kp.y))
+
+            # calculate intersection point
+            plane = self._workspace.get_workspace_plane()
+            limits = plane.get_limits() 
+            intersection = plane.compute_intersection_point(p0, p1)
+            if intersection is not None:
+                # Only pointers outside the workspace None 
+                if not (limits[0][0] < intersection[0] < limits[0][1] and \
+                        limits[1][0] < intersection[1] < limits[1][1] and \
+                        limits[2][0] < intersection[2] < limits[2][1]):
+                    intersection = None
+                    
+            pointer.update_buffer(intersection)
+
+
+    def publish_pointer(self, pointer): 
+        """
+        Publish the pointer, if the point exists. Requires tf_buffer listener
+        to be active.  
+
+        Args:
+            pointer (Pointer): Pointer instance to be published 
+
+        """
+        intersection = pointer.get_pointer()
+        if intersection is not None: 
+            x,y,z = [i/1000 for i in intersection]
+            marker_pose = [x,y,z]
+            
+            point_on_workspace = point_to_workspace_plane(marker_pose, 
+                                                          self._tf_buffer,
+                                                          self._camera_tf_frame,
+                                                          self._target_tf_frame)
+            marker = generate_marker_from_point(self._target_tf_frame , 
+                                                point_on_workspace,
+                                                2, 0.1, 
+                                                pointer.get_color())
+            
+            pointer.get_pointer_publisher().publish(point_on_workspace)
+            pointer.get_marker_publisher().publish(marker)
+
+
+    def publish_visualized_image(self): 
+        """
+        Publish the image with pointer visualizations 
+        """
+        # Visualize the results in image
+        cv_image = self._camera_sub.get_rgb()
+
+        # Working area defined as a rectangle
+        for pair in self._workspace.get_corner_pairs():
+            cv2.line(cv_image, (pair[0][0], pair[0][1]),
+                    (pair[1][0], pair[1][1]), [0, 0, 255], 2)
+
+        cv_image = self.visualize_pointing_gesture(cv_image, 
+                                                   self._left_pointer)
+        cv_image = self.visualize_pointing_gesture(cv_image, 
+                                                   self._right_pointer)
+
+        # Convert the annotated OpenDR image to ROS2 image message, publish 
+        self.image_publisher.publish(self._cv_bridge.cv2_to_imgmsg(cv_image, 
+                                                               encoding="rgb8"))
+
+    def visualize_pointing_gesture(self, image, pointer):
+        """
+        Visualize the vector pointers are based on, e.g., vector from shoulder 
+        to wrist keypoint. Draw an ellipse to visualize the area where pointer 
+        is directed on the plane.
+
+        Args:
+            image (np.array): OpenCV image 
+            pointer (Pointer): Pointer entity (left/right)
+
+        Returns:
+            image (np.array): image with visualizations 
+        """
+        [lower_kp, upper_kp] = pointer.get_keypoints()  
+        # Draw the pointing gesture pose vector
+        if (upper_kp is not None and upper_kp.x != -1 and upper_kp.y != -1 and
+                lower_kp is not None and lower_kp.x != -1 and lower_kp.y != 1):
+            cv2.arrowedLine(image, (upper_kp.x, upper_kp.y), 
+                            (lower_kp.x, lower_kp.y),
+                            [0, 255, 0], 2)
+        
+        intersection_average = pointer.get_pointer() 
+
+        if intersection_average is not None: 
+            pointer_2d = self._camera_sub \
+                            .project_point_to_pixel(intersection_average)
+            # red laser like pointer
+            cv2.circle(image, (int(pointer_2d[0]), int(pointer_2d[1])), 2, 
+                       [255, 0, 0], 2)
+
+            # scale ellipse upublish_visualized_imagesing plane dimensions
+            cv2.ellipse(image, (int(pointer_2d[0]), int(pointer_2d[1])), 
+                        (self._ellipse_delta_x, self._ellipse_delta_y),
+                        angle=0, startAngle=0, endAngle=360, color=[0, 255, 0], 
+                        thickness=1)
+
+        return image
+
+    class Pointer: 
+        """
+        Pointer class to store the keypoint IDs, relevant publishers and 
+        pointer buffer
+        """
+        def __init__(self, lower_keypoint_id, upper_keypoint_id, marker_topic,
+                     marker_color, pointer_topic, buffer_size=5):
+            """
+            Args:
+                lower_keypoint_id (int): ID for the used OpenDRPose2DKeypoint 
+                upper_keypoint_id (int): ID for the used OpenDRPose2DKeypoint
+                marker_topic (str): name of the published marker topic 
+                pointer_topic (std): name of the published pointer topic 
+                buffer_size (int, optional): The size of PointerBuffer. 
+                                             Defaults to 5.
+            """
+            
+            self._lower_kp_id = lower_keypoint_id
+            self._upper_kp_id = upper_keypoint_id
+            self._marker_color = marker_color 
+            self._keypoints = None 
+
+            self._pointer_buffer = self.PointerBuffer(buffer_size)
+            self._marker_pub = rospy.Publisher(marker_topic, Marker, 
+                                               queue_size=2)
+            self._pointer_pub = rospy.Publisher(pointer_topic, PointStamped, 
+                                                queue_size=100)
+    
+        def get_pointer(self): 
+            """
+            Returns the average intersection value for the pointing gesture 
+            """
+            return self._pointer_buffer.get_average()
+
+        def update_buffer(self, intersection):
+            """
+            Update the buffercolor
+
+            Args:
+                intersection (List[]): [x,y,z] coordinates of the intersection
+            """
+            self._pointer_buffer.add_pointer(intersection)
+                
+        def get_lower_keypoint_id(self): 
+            """
+            Returns the used lower keypoint ID 
+            """
+            return self._lower_kp_id
+        
+        def get_upper_keypoint_id(self):
+            """
+            Returns the used upper keypoint ID 
+            """ 
+            return self._upper_kp_id
+
+        def get_color(self): 
+            """
+            Returns the marker color
+            """
+            return self._marker_color
+        
+        def set_keypoints(self, lower_kp, upper_kp):
+            """
+            Set image coordinates for lower and upper keypoints 
+
+            Args:
+                lower_kp (OpenDRPose2DKeypoint): object {x,y} for 2D coordinates 
+                upper_kp (OpenDRPose2DKeypoint): object {x,y} for 2D coordinates 
+            """
+            self._keypoints = [lower_kp, upper_kp]
+        
+        def get_keypoints(self): 
+            """
+            Returns list of lower and upper keypoint image coordinates 
+            """
+            return self._keypoints
+
+        def get_marker_publisher(self): 
+            """
+            Returns Marker publisher assigned to the pointer 
+            """
+            return self._marker_pub
+
+        def get_pointer_publisher(self): 
+            """
+            Returns publisher assigned to the pointer 
+            """
+            return self._pointer_pub
+
+        class PointerBuffer:
+            """
+            Buffer class for pointers
+            """
+
+            def __init__(self, buffer_size, none_count_limit=10):
+                """
+            
+                Args:
+                    buffer_size (int): The size of the coordinate buffers
+                    none_count_limit (int, optional): how many None counts are 
+                                                      allowed before the pointer 
+                                                      becomes invalid 
+                """
+                self.pointer_buffer_x = deque(maxlen=buffer_size)
+                self.pointer_buffer_y = deque(maxlen=buffer_size)
+                self.pointer_buffer_z = deque(maxlen=buffer_size)
+                self.buffer_size = buffer_size
+                self.buffer_full = False
+                self.none_count = 0
+                self.none_count_limit = none_count_limit
+                self.reset_buffer = False
+
+            def add_pointer(self, coordinate):
+                """
+                Add the new intersection coordinate. Count the received None 
+                values; when buffer is full, set flag. 
+
+                Args:
+                    coordinate (List[]): x,y,z coordinate of the intersection
+                """
+                if coordinate is not None:
+                    self.pointer_buffer_x.append(coordinate[0])
+                    self.pointer_buffer_y.append(coordinate[1])
+                    self.pointer_buffer_z.append(coordinate[2])
+                    self.none_count = 0
+                else:
+                    self.none_count += 1
+
+                if len(self.pointer_buffer_x) == self.pointer_buffer_x.maxlen:
+                    self.buffer_full = True
+
+            def get_average(self):
+                if self.buffer_full and \
+                   self.none_count <= self.none_count_limit:
+                    
+                    return (np.round(np.nanmean(self.pointer_buffer_x),5),
+                            np.round(np.nanmean(self.pointer_buffer_y),5),
+                            np.round(np.nanmean(self.pointer_buffer_z),5))
+                else:
+                    return None
+
+
+def main(args=None):
+
+
+    rospy.init_node('gesture_pointer_node', anonymous=True)
+    
+    # Initialize camera subscriber 
+    cam_sub = CameraSubscriber("/st_cam/color/image_raw",
+                               "/st_cam/aligned_depth_to_color/image_raw", 
+                               "/st_cam/aligned_depth_to_color/camera_info")
+    pose_topic = "opendr/poses"
+    output_image_topic = "/gesture_projection"
+    shoulder_to_wrist = True
+    ws = read_corners(file_name='corners_mean.csv')
+
+    projection_node = GesturePointer(
+        cam_sub,
+        input_poses_topic=pose_topic,
+        output_image_topic=output_image_topic,
+        from_shoulder_to_wrist=shoulder_to_wrist,
+        cache_enabled=True,
+        predefined_corners=None # ws.tolist(),
+    )
+
+    projection_node.initialize()
+    rospy.spin()
+
+if __name__ == '__main__':
+    main()
