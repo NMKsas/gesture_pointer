@@ -46,7 +46,7 @@ RED_COLOR = [1.0,0,0,1.0]
 GREEN_COLOR = [0,1.0,0,1.0]
 
 # ! ---------- FILL IN FOR STORING THE CACHE ---------- ! #
-CACHE_PATH = '/<your_workspace>/ros1env/src/gesture_pointer/data/'
+CACHE_PATH = '/<your_workspace>/src/gesture_pointer/data/'
 CORNER_FILE = 'corner_cache'
 MASK_FILE = 'mask_cache'
 # ! --------------------------------------------------- ! #
