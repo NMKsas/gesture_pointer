@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import rospy 
+from snap_strategy_lib.object_strategies import GestureObjectStrategy, \
+                                                SpeechObjectStrategy
+from snap_strategy_lib.location_strategies import SpeechLocationStrategy, \
+                                                  GestureLocationStrategy
+from snap_strategy_lib.snap_action_node import SnapActionNode 
+from snap_strategy_lib.detection_filter import DetectionFilter
+from snap_strategy_lib.detector_sub import DetectionSubscriber
+from snap_strategy_lib.pointer_sub import PointerSubscriber
+from snap_strategy_lib.json_utils import read_json_file, id_to_name_dict
+
+JSON_PATH = "/up/ros1env/json_files/"
+TARGETS_PATH = JSON_PATH + "targets.json"
+
+def snapper_main(args=None):
+
+    print("Snapper node")
+    rospy.init_node('snapper', anonymous=True)
+    targets = read_json_file(TARGETS_PATH, 'targets')
+    objects_dict = id_to_name_dict(targets, 'object')
+    
+    # singleton instance
+    detection_sub = DetectionSubscriber()
+
+    detection_filter_l = DetectionFilter(detection_sub, objects_dict)
+    detection_filter = DetectionFilter(detection_sub, objects_dict)
+
+    # Launch both gesture and speech based snappers 
+    l_pointer_sub = PointerSubscriber("/gesture_pointer/left_pointer", 
+                                      buffer_size=20)
+    l_gesture_snapper = SnapActionNode(GestureObjectStrategy(detection_filter_l,l_pointer_sub),'snap_gest_obj_l',20)
+    l_gesture_loc_snapper = SnapActionNode(GestureLocationStrategy(l_pointer_sub),'snap_gest_loc_l', 20)
+    speech_snapper = SnapActionNode(SpeechObjectStrategy(detection_filter),'snap_speech_obj', 20)
+    speech_loc_snapper = SnapActionNode(SpeechLocationStrategy(targets['location']),'snap_speech_loc', 20)
+
+    l_gesture_snapper.start_node()
+    speech_snapper.start_node()
+    l_gesture_loc_snapper.start_node()
+    speech_loc_snapper.start_node()
+
+if __name__ == "__main__":
+    snapper_main()
+
+
