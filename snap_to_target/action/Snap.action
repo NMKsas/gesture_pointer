@@ -1,0 +1,9 @@
+int16 group_id
+---
+# Define the result
+int16 target_id 
+bool is_group 
+geometry_msgs/PoseWithCovariance target_pose
+---
+# Define a feedback message
+string feedback_msg
