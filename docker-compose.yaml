@@ -1,0 +1,28 @@
+# Docker compose file for initializing gesture pointer environment
+# 
+# OpenDR image uses
+#   - Ubuntu 20.04
+#   - ROS noetic 
+# 
+
+services:
+  gesture_pointer:
+    tty: true 
+    build: .
+    container_name: gp_container         # identifier
+    privileged: true  
+    volumes: 
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw        # enable cv2 tools 
+      - /dev/video0:/dev/video0                 # for camera usage
+      - /dev/video1:/dev/video1                 # for camera usage
+      - /dev/video2:/dev/video2                 # for camera usage
+      - /dev/video3:/dev/video3                 # for camera usage
+      - /dev/video4:/dev/video4                 # for camera usage
+      - /dev/video5:/dev/video5                 # for camera usage
+      - /dev/video6:/dev/video6                 # for camera usage
+      - /dev/video7:/dev/video7                 # for camera usage 
+    environment:
+      - DISPLAY=$DISPLAY    # environmental variable for display, needed for e.g., RViz
+      
+volumes: 
+  gp_container:
