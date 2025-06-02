@@ -1,0 +1,4 @@
+pyrealsense2
+opendr-toolkit-engine
+opendr-toolkit-pose-estimation
+protobuf==3.20
