@@ -11,7 +11,8 @@ services:
     build: .
     container_name: gp_container         # identifier
     privileged: true  
-    volumes: 
+    volumes:
+      - ./ros1env/src:/up/ros1env/src           # bind the directories 
       - /tmp/.X11-unix:/tmp/.X11-unix:rw        # enable cv2 tools 
       - /dev/video0:/dev/video0                 # for camera usage
       - /dev/video1:/dev/video1                 # for camera usage

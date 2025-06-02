@@ -10,7 +10,6 @@ project(gesture_pointer)
 find_package(catkin REQUIRED COMPONENTS
   aruco_ros # optional
   geometry_msgs
-  message_generation 
   rospy
   sensor_msgs
   std_msgs
@@ -51,11 +50,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  OpenDRPose2D.msg
-  OpenDRPose2DKeypoint.msg
-)
+#add_message_files(
+#  FILES
+#)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -71,7 +68,8 @@ add_message_files(
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
-#    DEPENDENCIES
+#   DEPENDENCIES
+#    std_msgs
 #)
 
 ################################################
@@ -94,7 +92,7 @@ add_message_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gesture_pointer
-   CATKIN_DEPENDS rospy std_msgs message_runtime
+   CATKIN_DEPENDS rospy std_msgs
 #  DEPENDS system_lib
 )
 

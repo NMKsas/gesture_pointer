@@ -23,7 +23,7 @@ import tf2_ros
 
 from sensor_msgs.msg import Image as ROS_Image
 from cv_bridge import CvBridge
-from gesture_pointer.msg import OpenDRPose2D
+from opendr_bridge.msg import OpenDRPose2D
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
 from submodules import Workspace, CameraSubscriber
