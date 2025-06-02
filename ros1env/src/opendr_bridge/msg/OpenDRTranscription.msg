@@ -1,4 +1,4 @@
-# Copyright 2020-2023 OpenDR European Project
+# Copyright 2020-2024 OpenDR European Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This message represents a full OpenDR human pose 2D as a list of keypoints
+# This message encodes the live result of a speech recognition process.
+# A series of incremental results might be provided, until a final recognition
+# hypothesis is returned.
 
-std_msgs/Header header
+Header header
 
-# The id of the pose
-int32 pose_id
+string incremental # incremental recognition results
+string final # final recognised text
 
-# The pose detection confidence of the model
-float32 conf
-
-# A list of a human 2D pose keypoints
-OpenDRPose2DKeypoint[] keypoint_list
+float64 confidence # confidence of the final recognised speech, [0-1]
