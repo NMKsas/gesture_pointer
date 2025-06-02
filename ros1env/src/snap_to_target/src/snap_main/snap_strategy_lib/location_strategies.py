@@ -25,7 +25,7 @@ class GestureLocationStrategy(SnapStrategy):
         # TODO: should be in the message! 
         self._default_tf_frame = "panda_link0"
         self._pointer_sub = pointer_sub
-        self._threshold = 0.05**2
+        self._threshold = 0.05**2 # cm
     
     def reset(self): 
         """

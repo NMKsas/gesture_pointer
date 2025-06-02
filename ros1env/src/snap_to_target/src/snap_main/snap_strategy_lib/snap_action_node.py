@@ -75,7 +75,8 @@ class SnapActionNode:
             self._server.publish_feedback(self._feedback)
 
             # attempt snap to target 
-            target_id, target_pose, is_group = self._snap_strategy.snap_to_target(goal)
+            target_id, target_pose, is_group = self._snap_strategy \
+                                                   .snap_to_target(goal)
             
             # if target is verified, action is successful 
             if target_id is not None and target_pose is not None: 
