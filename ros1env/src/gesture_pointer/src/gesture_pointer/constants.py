@@ -10,6 +10,6 @@ MASK_CACHE_FILE = 'mask_cache'
 
 # ArUco data collection constants 
 CAMERA_TF_FRAME = 'st_cam_color_optical_frame'
-CORNERS_FILE_NAME = 'corners_mean_.csv'
+CORNERS_CSV_FILE = 'corners_mean.csv'
 MARKERS = [100,101,102,103] 
 
