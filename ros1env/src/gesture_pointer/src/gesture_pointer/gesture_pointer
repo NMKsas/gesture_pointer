@@ -26,6 +26,8 @@ from cv_bridge import CvBridge
 from opendr_bridge.msg import OpenDRPose2D
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
+from constants import CORNERS_CSV_FILE, DEFAULT_PATH, CORNER_CACHE_FILE, \
+                      MASK_CACHE_FILE
 from submodules import Workspace, CameraSubscriber
 from utils import point_to_workspace_plane, generate_marker_from_point, \
                   read_corners
@@ -44,12 +46,6 @@ LEFT_WRIST = 7
 
 RED_COLOR = [1.0,0,0,1.0]
 GREEN_COLOR = [0,1.0,0,1.0]
-
-# ! ---------- FILL IN FOR STORING THE CACHE ---------- ! #
-CACHE_PATH = '/<your_workspace>/src/gesture_pointer/data/'
-CORNER_FILE = 'corner_cache'
-MASK_FILE = 'mask_cache'
-# ! --------------------------------------------------- ! #
 
 
 class GesturePointer:
@@ -145,8 +141,8 @@ class GesturePointer:
         
         # establish workspace 
         self._workspace = Workspace(self._camera_sub,
-                                    corner_file_path=CACHE_PATH + CORNER_FILE,
-                                    mask_file_path=CACHE_PATH + MASK_FILE,
+                                    corner_file_path=DEFAULT_PATH + CORNER_CACHE_FILE,
+                                    mask_file_path=DEFAULT_PATH + MASK_CACHE_FILE,
                                     corner_points=self._predefined_corners,
                                     cache_enabled=self._cache_enabled)
 
@@ -455,7 +451,7 @@ def main(args=None):
     pose_topic = "opendr/poses"
     output_image_topic = "/gesture_projection"
     shoulder_to_wrist = True
-    ws = read_corners(file_name='corners_mean_example.csv')
+    corners = read_corners(CORNERS_CSV_FILE, DEFAULT_PATH)
 
     projection_node = GesturePointer(
         cam_sub,
@@ -463,7 +459,7 @@ def main(args=None):
         output_image_topic=output_image_topic,
         from_shoulder_to_wrist=shoulder_to_wrist,
         cache_enabled=True,
-        predefined_corners=None # ws.tolist(),
+        predefined_corners=corners
     )
 
     projection_node.initialize()
