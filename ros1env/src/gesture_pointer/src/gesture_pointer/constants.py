@@ -3,8 +3,6 @@
 # generic constants 
 DEFAULT_PATH = "/up/ros1env/src/gesture_pointer/data"
 CACHE_ENABLED = True
-DEBUG_ENABLED = True
-
 CORNER_CACHE_FILE = 'corner_cache'
 MASK_CACHE_FILE = 'mask_cache'
 

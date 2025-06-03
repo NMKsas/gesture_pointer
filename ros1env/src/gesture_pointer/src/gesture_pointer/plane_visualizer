@@ -64,6 +64,10 @@ def main(args=None):
     # fetch the coordinates for the plane corners
     plane_corners = read_corners(CORNERS_CSV_FILE, DEFAULT_PATH)
     
+    if plane_corners is None: 
+        rospy.signal_shutdown(("Reading the %s file failed." % CORNERS_CSV_FILE))
+        return 
+    
     pv = PlaneVisualizer(CAMERA_TF_FRAME, plane_corners) 
     pv.initialize()
 

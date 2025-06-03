@@ -4,10 +4,11 @@ import numpy as np
 import rospy 
 from utils.file_utils import generate_csv
 from geometry_msgs.msg import PoseStamped
-from constants import CAMERA_TF_FRAME, CORNERS_CSV_FILE, DEFAULT_PATH, MARKERS,\
-                      DEBUG_ENABLED
+from constants import CAMERA_TF_FRAME, CORNERS_CSV_FILE, DEFAULT_PATH, MARKERS
+                      
 
 ATTEMPTS = 15
+DEBUG_ENABLED = True
 
 def print_pose(pose_mean, pose_variance): 
     """
