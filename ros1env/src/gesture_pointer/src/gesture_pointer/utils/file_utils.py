@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # Util functions for generating and reading .csv files 
 import csv
-import numpy as np
 import os 
 
-DEFAULT_PATH = "<your_workspace>/src/gesture_pointer/data"
-
-def generate_csv(file_name, header_list, data_list, ids_enabled=True,
-                 file_path=DEFAULT_PATH): 
+def generate_csv(file_name, file_path, header_list, data_list, 
+                 ids_enabled=True): 
     """
     Generates .csv file with given header and data list to the current 
     working directory.
@@ -51,35 +48,38 @@ def generate_csv(file_name, header_list, data_list, ids_enabled=True,
     print("File saved successfully at path %s" % file_path)
 
 
-def read_corners(file_name="corners_mean.csv", path=DEFAULT_PATH, 
-                 is_header=True): 
+def read_corners(file_name, file_path, is_header=True): 
     """
     Read corners from a .csv file. By default, the (x,y,z) coordinates for 
-    each corner are defined in columns (2,3,4) of each row. 
+    each corner are defined in columns (2,3,4) of each .csv row. 
 
     Args:
-        file_name (str): The file name. Defaults to "corners_mean.csv".
-        path (str): The file path. Defaults to DEFAULT_PATH.
+        file_name (str): The file name.
+        path (str): The file path. 
         is_header (bool, optional): True, when the data includes header that 
                                     should be skipped; false otherwise. 
 
     Returns:
-        np.array(float): List of corners as numpy array 
+        List: List of corners, [(x,y,z), ... , (x,y,z)], None if file not found
     """
 
-    coordinates = []
-    with open(DEFAULT_PATH + "/" + file_name , newline='') as csvfile:
-        reader = csv.reader(csvfile)
+    corners = []
+    
+    try: 
+        with open(file_path + "/" + file_name , newline='') as csvfile:
+            reader = csv.reader(csvfile)
 
-        # skip the header if needed
-        if is_header:
-            next(reader)
-        
-        # read the x,y,z coordinates from default columns 
-        for row in reader:
-            x, y, z = row[2], row[3], row[4] 
-            coordinates.append([x,y,z])
-
+            # skip the header if needed
+            if is_header:
+                next(reader)
+            
+            # read the x,y,z coordinates from default columns 
+            for row in reader:
+                x, y, z = float(row[2]), float(row[3]), float(row[4]) 
+                corners.append([x,y,z])
+    except FileNotFoundError as e: 
+        print("File not found.")
+        return None 
+    
     # Convert lists to numpy arrays
-    corners = np.array(coordinates, dtype=float)
     return corners

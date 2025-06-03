@@ -3,6 +3,7 @@ import rospy
 from visualization_msgs.msg import Marker
 from utils import read_corners
 from utils import generate_line_strip_marker as get_line_marker
+from constants import DEFAULT_PATH, CAMERA_TF_FRAME, CORNERS_CSV_FILE
 
 RIGHT_LOW = 0
 RIGHT_UP = 1
@@ -61,9 +62,13 @@ def main(args=None):
     rospy.loginfo("Plane visualizer started.")  
 
     # fetch the coordinates for the plane corners
-    plane_corners = read_corners("corners_mean.csv")
+    plane_corners = read_corners(CORNERS_CSV_FILE, DEFAULT_PATH)
     
-    pv = PlaneVisualizer("st_cam_color_optical_frame", plane_corners) 
+    if plane_corners is None: 
+        rospy.signal_shutdown(("Reading the %s file failed." % CORNERS_CSV_FILE))
+        return 
+    
+    pv = PlaneVisualizer(CAMERA_TF_FRAME, plane_corners) 
     pv.initialize()
 
     while not rospy.is_shutdown(): 

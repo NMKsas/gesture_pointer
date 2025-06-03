@@ -4,12 +4,11 @@ import numpy as np
 import rospy 
 from utils.file_utils import generate_csv
 from geometry_msgs.msg import PoseStamped
+from constants import CAMERA_TF_FRAME, CORNERS_CSV_FILE, DEFAULT_PATH, MARKERS
+                      
 
 ATTEMPTS = 15
 DEBUG_ENABLED = True
-CAMERA_TF_FRAME = 'st_cam_color_optical_frame'
-CORNERS_FILE_NAME = 'corners_mean.csv'
-MARKERS = [100,101,102,103] 
 
 def print_pose(pose_mean, pose_variance): 
     """
@@ -129,7 +128,7 @@ def main(args=None):
                     break 
                 rospy.sleep(0.5)
             
-        generate_csv(CORNERS_FILE_NAME,
+        generate_csv(CORNERS_CSV_FILE, DEFAULT_PATH,
                     ["Aruco ID", "Parent frame ID", 
                     "position.x","position.y","position.z",
                     "orientation.x", "orientation.y",

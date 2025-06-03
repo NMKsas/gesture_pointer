@@ -9,6 +9,7 @@ project(gesture_pointer)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   aruco_ros # optional
+  cv_bridge
   geometry_msgs
   rospy
   sensor_msgs
