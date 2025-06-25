@@ -1,8 +1,7 @@
 # Docker compose file for initializing gesture pointer environment
 # 
-# OpenDR image uses
-#   - Ubuntu 20.04
-#   - ROS noetic 
+#   - Ubuntu 22.04 jammy 
+#   - ROS2 humble 
 # 
 
 services:
@@ -12,7 +11,7 @@ services:
     container_name: gp_container         # identifier
     privileged: true  
     volumes:
-      - ./ros1env/src:/up/ros1env/src           # bind the directories 
+      - ./ros2env/src:/up/ros2env/src           # bind the directories 
       - /tmp/.X11-unix:/tmp/.X11-unix:rw        # enable cv2 tools 
       - /dev/video0:/dev/video0                 # for camera usage
       - /dev/video1:/dev/video1                 # for camera usage
