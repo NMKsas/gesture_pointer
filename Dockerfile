@@ -16,3 +16,7 @@ RUN mkdir -p /up/ros2env/src/
 COPY /json_files /up/ros2env/example_files
 COPY requirements.txt /up/ros2env
 WORKDIR /up/ros2env
+
+# Install python dependencies 
+RUN pip3 install -r requirements.txt
+RUN rm requirements.txt
