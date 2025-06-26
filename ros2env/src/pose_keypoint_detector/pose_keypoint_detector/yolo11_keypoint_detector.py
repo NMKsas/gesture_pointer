@@ -80,7 +80,7 @@ class Yolo11KeypointDetector(PoseKeypointDetector):
             poses.append(pose)
 
         # update timestamp, publish the message
-        self._msg.header.stamp = rclpy.time.Time().to_msg()
+        self._msg.header.stamp = self._node.get_clock().now().to_msg()
         self._msg.keypoint_list = poses
         self._keypoint_pub.publish(self._msg)
         
