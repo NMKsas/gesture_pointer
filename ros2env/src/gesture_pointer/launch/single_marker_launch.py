@@ -2,14 +2,17 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from gesture_pointer.constants import CAMERA_TF_FRAME, CAMERA_RGB_TOPIC, \
+                                      CAMERA_INFO_TOPIC
 
 
 def launch_setup(context, *args, **kwargs):
 
-    camera_frame = 'st_cam_color_optical_frame'
-    camera_info_topic = '/camera/st_cam/color/camera_info'
-    camera_rgb_topic = '/camera/st_cam/color/image_raw'
+    camera_frame = CAMERA_TF_FRAME
+    camera_info_topic = CAMERA_INFO_TOPIC
+    camera_rgb_topic = CAMERA_RGB_TOPIC
     is_image_rectified = True 
+    
     aruco_single_params = {
         'image_is_rectified': is_image_rectified, 
         'marker_size': LaunchConfiguration('marker_size'),

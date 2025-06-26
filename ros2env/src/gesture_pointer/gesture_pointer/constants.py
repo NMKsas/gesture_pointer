@@ -8,7 +8,10 @@ MASK_CACHE_FILE = 'mask_cache'
 
 # ArUco data collection constants 
 CAMERA_TF_FRAME = 'st_cam_color_optical_frame'
+CAMERA_RGB_TOPIC = '/camera/st_cam/color/image_raw'
+CAMERA_INFO_TOPIC = '/camera/st_cam/color/camera_info'
 CORNERS_CSV_FILE = 'corners_mean.csv'
+CORNER_MARKER_SIZE = 0.08 # m
 MARKERS = [100,101,102,103] 
 
 YOLO11_KEYPOINT_NAMES = ['nose', 

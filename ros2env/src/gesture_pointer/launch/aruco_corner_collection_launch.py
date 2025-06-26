@@ -5,7 +5,8 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node, PushRosNamespace
 
-from gesture_pointer.constants import MARKERS
+from gesture_pointer.constants import MARKERS, CAMERA_TF_FRAME, \
+                                      CORNER_MARKER_SIZE
 
 def get_marker_node(marker_id, marker_size, camera_reference_frame): 
     """
@@ -52,12 +53,12 @@ def generate_launch_description():
     """
     
     corner_marker_size = DeclareLaunchArgument(
-        'corner_marker_size', default_value='0.08',  
+        'corner_marker_size', default_value=str(CORNER_MARKER_SIZE),  
         description='Marker size in m, '
     )
 
     camera_reference_frame = DeclareLaunchArgument(
-        'camera_reference_frame', default_value='st_cam_color_optical_frame',
+        'camera_reference_frame', default_value=CAMERA_TF_FRAME,
         description='Camera reference frame'
     )
     
