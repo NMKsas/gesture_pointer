@@ -20,3 +20,5 @@ RUN mkdir -p /up/ros1env/src/
 COPY /json_files /up/ros1env/example_files
 COPY requirements.txt /up/ros1env
 WORKDIR /up/ros1env
+RUN pip3 install -r requirements.txt
+RUN rm requirements.txt
