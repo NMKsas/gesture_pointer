@@ -12,5 +12,3 @@ https://github.com/user-attachments/assets/82af5a49-0747-4c7f-a834-037e4959ec9f
 The original work was developed for Intel RealSense D415 camera. 
 
 Author: Noora Sassali, [`@NMKsas`](https://github.com/NMKsas) 
-
-**Note: This is a pre-release of the repository. Module `snap_to_target` will be included in the near future.**
