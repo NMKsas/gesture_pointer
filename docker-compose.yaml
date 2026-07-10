@@ -1,28 +1,31 @@
 # Docker compose file for initializing gesture pointer environment
 # 
-#   - Ubuntu 22.04 jammy 
-#   - ROS2 humble 
-# 
+#   - Ubuntu 24.04 Noble 
+#   - ROS2 jazzy 
+#
 
 services:
   gesture_pointer:
     tty: true 
-    build: .
-    container_name: gp_container         # identifier
-    privileged: true  
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: gp_container    # identifier
+    network_mode: host
+    ipc: host
+    pid: host
     volumes:
       - ./ros2env/src:/up/ros2env/src           # bind the directories 
       - /tmp/.X11-unix:/tmp/.X11-unix:rw        # enable cv2 tools 
-      - /dev/video0:/dev/video0                 # for camera usage
-      - /dev/video1:/dev/video1                 # for camera usage
-      - /dev/video2:/dev/video2                 # for camera usage
-      - /dev/video3:/dev/video3                 # for camera usage
+    devices: 
       - /dev/video4:/dev/video4                 # for camera usage
       - /dev/video5:/dev/video5                 # for camera usage
       - /dev/video6:/dev/video6                 # for camera usage
       - /dev/video7:/dev/video7                 # for camera usage 
+      - /dev/video8:/dev/video8                 # for camera usage
+      - /dev/video9:/dev/video9                 # for camera usage 
+
     environment:
-      - DISPLAY=$DISPLAY    # environmental variable for display, needed for e.g., RViz
-      
+      - DISPLAY=$DISPLAY    # env. variable for display, needed for e.g., RViz
 volumes: 
   gp_container:

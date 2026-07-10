@@ -39,6 +39,7 @@ class Yolo11KeypointDetector(PoseKeypointDetector):
         self._msg.pose_id = 0
         self._msg.header = Header() 
         self._msg.header.frame_id = rgb_frame
+        self._node.get_logger().info("YOLO keypoint detector initialized.")
     
     def image_callback(self, msg): 
         """
@@ -78,7 +79,7 @@ class Yolo11KeypointDetector(PoseKeypointDetector):
                 y=int(y)
             )
             poses.append(pose)
-
+            
         # update timestamp, publish the message
         self._msg.header.stamp = self._node.get_clock().now().to_msg()
         self._msg.keypoint_list = poses

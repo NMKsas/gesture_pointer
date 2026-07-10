@@ -4,6 +4,7 @@ relies on pretrained `ultralytics YOLO11` model to detect the body keypoints. Fu
 
 ## Requirements:
 
+- ROS2 package: `planar_pyworkspace_interfaces`, `planar_pyworkspace`
 - RealSense D400-series depth camera, pyrealsense2 library
 - ultralytics library for YOLO-11 
 

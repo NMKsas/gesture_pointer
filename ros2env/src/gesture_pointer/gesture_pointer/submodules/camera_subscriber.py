@@ -125,7 +125,7 @@ class CameraSubscriber():
         return rs2.rs2_project_point_to_pixel(self.get_intrinsics(), 
                                               list(point))
 
-    def deproject_pixel_to_point(self, pixel, depth_frame=None): 
+    def deproject_pixel_to_point(self, pixel): 
         """
         Deproject 2D image coordinate to 3D coordinate 
 
@@ -137,17 +137,26 @@ class CameraSubscriber():
         """
         
         # get current depth frame 
-        if depth_frame is None: 
-            depth_frame = self.get_depth() 
+        depth_frame = self.get_depth() 
 
-        # find the depth value of the pixel 
-        pixel_depth = depth_frame[pixel[1], pixel[0]]
+        try: 
+            # find the depth value of the pixel
+            pixel_depth = depth_frame[pixel[1], pixel[0]]
+
+        except TypeError as e: 
+            self._node.get_logger().info("No valid depth image")
+            return None 
 
         # use realsense library to deproject the pixel into 3D point 
         coord = rs2.rs2_deproject_pixel_to_point(self.get_intrinsics(), 
-                                                 [pixel[0], pixel[1]],
-                                                 pixel_depth)
+                                                    [pixel[0], pixel[1]],
+                                                    pixel_depth)
+        # scaling from mm to m
+        coord[0] = coord[0]/1000 
+        coord[1] = coord[1]/1000
+        coord[2] = coord[2]/1000
         return coord
+        
     
 def main(args=None):
     rclpy.init(args=args)

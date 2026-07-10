@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>gesture_pointer</name>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <description>Gesture pointer package</description>
   <maintainer email="noora.sassali@gmail.com">nmksas</maintainer>
   <license>Apache License v2.0</license>
@@ -12,10 +12,10 @@
   <exec_depend>vision_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>message_filters</exec_depend>
+
   <exec_depend>pose_detection_interfaces</exec_depend>
-  <exec_depend>ros2launch</exec_depend>
-  <exec_depend>aruco_ros</exec_depend>
-  
+  <exec_depend>planar_pyworkspace_interfaces</exec_depend>
+    
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
