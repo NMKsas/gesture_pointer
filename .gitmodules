@@ -1,0 +1,3 @@
+[submodule "ros2env/src/planar_pyworkspace"]
+	path = ros2env/src/planar_pyworkspace
+	url = https://github.com/NMKsas/planar_pyworkspace.git
