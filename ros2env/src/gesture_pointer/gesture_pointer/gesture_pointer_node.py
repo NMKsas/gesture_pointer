@@ -290,7 +290,7 @@ class GesturePointer(Node):
         """
         intersection = pointer.get_pointer()
         if intersection is not None: 
-            x,y,z = [i/1000 for i in intersection]
+            x,y,z = intersection
             marker_pose = [x,y,z]
             
             node_time = self.get_clock().now().to_msg()
